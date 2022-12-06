@@ -3,7 +3,7 @@
 #
 
 file created by Jessica Wang, 05.12.2022, last edit 05.12.2022
-## Content : R Script for investigating past and present species distribution using MaxEnt (machine learning algorithm). As a part of my master thesis, I analyzed past (1768-1950) and present (1950- mid 2022) plant species distribution to investigate the relationship between climatic changes and species distribution in Switzerland. ##
+## R Script for investigating past and present species distribution using MaxEnt (machine learning algorithm). As a part of my master thesis, I analyzed past (1768-1950) and present (1950- mid 2022) plant species distribution to investigate the relationship between climatic changes and species distribution in Switzerland. ##
 
 
 # Table of contents
