@@ -1,12 +1,12 @@
 ---
-title: "R club assignment MaxEnt Markdown Jess 11/07/22" 
+title: "R club MaxEnt Markdown Jess 11/07/22" 
 output: html_document 
 runtime: shiny
 theme: lumen
 ---
 
 
-> *Side note: This was one of my first scripts doing MaxEnt. However, it does not represent the actual analyses I did for my thesis because it is missing a couple steps (i.e. fine-tuning climate data to account for seasonality effects, distinction of time periods have changed, etc.) But the workflow concerning MaxEnt mapping itself remained the same. :) *
+> *Side note: This does not represent the actual analyses I did for my thesis because it is missing a couple steps (i.e. fine-tuning climate data to account for seasonality effects, distinction of time periods have changed, etc.) But the workflow concerning MaxEnt mapping itself remained the same. :) *
 
 
 #### Packages needed in order to run MaxEnt in R
