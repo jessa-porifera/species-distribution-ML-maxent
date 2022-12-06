@@ -1,0 +1,423 @@
+---
+title: "R club assignment MaxEnt Markdown Jess 11/07/22" 
+output: html_document 
+runtime: shiny
+theme: lumen
+---
+
+
+> *Side note: This was one of my first scripts doing MaxEnt. However, it does not represent the actual analyses I did for my thesis because it is missing a couple steps (i.e. fine-tuning climate data to account for seasonality effects, distinction of time periods have changed, etc.) But the workflow concerning MaxEnt mapping itself remained the same. :) *
+
+
+#### Packages needed in order to run MaxEnt in R
+library("raster")
+
+
+library("rgeos")
+
+
+library("dismo")
+
+
+library("rJava")
+
+
+#### Import plant occurrence data
+
+
+```{r data plants}
+
+enlightenment <-read.table("18+19thcentury_data.txt", header = T)
+
+worldwars <- read.table("20thcentury_data.txt", header = T)
+
+current <- read.table("21stcentury_data.txt", header = T)
+
+```
+
+
+
+#### Import shape file of Switzerland so that we have the basic outlines of the country
+
+```{r swiss shape file, eval=FALSE}
+Switzerland <- getData('GADM', country='CHE', level=0)
+
+
+plot(Switzerland)
+
+
+
+```
+
+
+
+![](SWITZERLANDPLOT.png)
+
+
+
+
+#### Import and preparation of climate data!
+
+
+install.packages("ncdf4")
+
+
+library(ncdf4)
+
+It came as a netCDF file and the following chunks show how to access the information in the netCDF and transform it into an image (.TIF) layer.
+Please consult https://rpubs.com/boyerag/297592 for more information on how to work with netCDF files. 
+
+
+
+---
+
+
+##### First, precipitation: 
+```{r precip data, eval=F}
+
+precip<-nc_open("2019-10-06_precip_ARM_1864-01-01-2017-12-31.nc")
+
+
+precip_lon <- ncvar_get(precip, "lon")
+
+
+precip_lat <- ncvar_get(precip, "lat", verbose = F)
+
+
+precip_t   <- ncvar_get(precip, "time")
+
+
+precip.array <- ncvar_get(precip, "precip") # store the data in a 3-dimensional array
+
+
+dim(precip.array) 
+
+precip_fillvalue <- ncatt_get(precip, "precip", "_FillValue")
+
+
+nc_close(precip) 
+
+precip.array[precip.array == precip_fillvalue$value] <- NA
+
+precip.slice <- precip.array[, , 1:11680] 
+
+
+precip.slice
+
+
+dim(precip.slice)
+
+
+precip.slice <-rowMeans(precip.slice, dims = 2)
+
+
+precip.r <- raster(t(precip.slice), 
+                 xmn=min(precip_lon), xmx=max(precip_lon), ymn=min(precip_lat), ymx=max(precip_lat), 
+                 crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+
+plot(precip.r)
+
+
+precip.r <- flip(precip.r, direction='y')
+
+
+plot(precip.r)
+
+
+writeRaster(precip.r, "precip_1864_1900.tif", "GTiff", overwrite=TRUE)
+
+
+precip.slice <- precip.array[, , 11681:48181] 
+
+
+precip.slice
+
+
+dim(precip.slice)
+
+
+precip.slice <-rowMeans(precip.slice, dims = 2)
+
+
+precip.r <- raster(t(precip.slice), 
+                 xmn=min(precip_lon), xmx=max(precip_lon), ymn=min(precip_lat), ymx=max(precip_lat), 
+                 crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+plot(precip.r)
+
+
+precip.r <- flip(precip.r, direction='y')
+
+
+plot(precip.r)
+
+
+writeRaster(precip.r, "precip_1901_2000.tif", "GTiff", overwrite=TRUE)
+
+precip.slice <- precip.array[, , 48182:5624] 
+
+
+precip.slice
+
+
+dim(precip.slice)
+
+
+precip.slice <-rowMeans(precip.slice, dims = 2)
+
+
+precip.r <- raster(t(precip.slice), 
+                 xmn=min(precip_lon), xmx=max(precip_lon), ymn=min(precip_lat), ymx=max(precip_lat), 
+                 crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+plot(precip.r)
+
+
+precip.r <- flip(precip.r, direction='y')
+
+
+plot(precip.r)
+
+
+writeRaster(precip.r, "precip_2001_2022.tif", "GTiff", overwrite=TRUE)
+```
+
+##### Now do the same with temperature
+```{r, eval=FALSE}
+temp<-nc_open("2019-10-06_temp_ARM_1864-01-01-2017-12-31.nc")
+
+
+temp_lon <- ncvar_get(temp, "lon")
+temp_lat <- ncvar_get(temp, "lat", verbose = F)
+temp_t   <- ncvar_get(temp, "time")
+
+temp.array <- ncvar_get(temp, "temp") # store the data in a 3-dimensional array
+
+
+dim(temp.array) 
+
+temp_fillvalue <- ncatt_get(temp, "temp", "_FillValue")
+
+
+temp_fillvalue
+
+
+nc_close(temp) 
+
+temp.array[temp.array == temp_fillvalue$value] <- NA
+
+
+temp.slice <- temp.array[, , 1:11680] 
+
+
+#temp.slice
+
+
+dim(temp.slice)
+
+
+temp.slice <-rowMeans(temp.slice, dims = 2)
+
+
+temp.r <- raster(t(temp.slice), 
+                 xmn=min(temp_lon), xmx=max(temp_lon), ymn=min(temp_lat), ymx=max(temp_lat), 
+                 crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+
+
+plot(temp.r)
+
+
+temp.r <- flip(temp.r, direction='y')
+
+
+plot(temp.r)
+
+
+writeRaster(temp.r, "temp_1864_1900.tif", "GTiff", overwrite=TRUE)
+
+
+temp.slice <- temp.array[, , 11681:48181] 
+
+
+#temp.slice
+
+
+dim(temp.slice)
+
+
+temp.slice <-rowMeans(temp.slice, dims = 2)
+
+
+temp.r <- raster(t(temp.slice), 
+                 xmn=min(temp_lon), xmx=max(temp_lon), ymn=min(temp_lat), ymx=max(temp_lat), 
+                 crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+
+
+plot(temp.r)
+
+
+temp.r <- flip(temp.r, direction='y')
+
+
+plot(temp.r)
+
+
+writeRaster(temp.r, "temp_1901_2000.tif", "GTiff", overwrite=TRUE)
+
+temp.slice <- temp.array[, , 48182:5624] 
+
+
+#temp.slice
+
+
+dim(temp.slice)
+
+
+temp.slice <-rowMeans(temp.slice, dims = 2)
+
+
+temp.r <- raster(t(temp.slice), 
+                 xmn=min(temp_lon), xmx=max(temp_lon), ymn=min(temp_lat), ymx=max(temp_lat), 
+                 crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+
+plot(temp.r)
+
+
+temp.r <- flip(temp.r, direction='y')
+
+
+plot(temp.r)
+
+
+writeRaster(temp.r, "temp_2001_2011.tif", "GTiff", overwrite=TRUE)
+
+
+
+#average for the period
+precip.1864 <-raster("precip_1864_1900.tif")
+
+
+precip.1950 <-raster("precip_1901_2000.tif")
+
+
+precip.2011 <-raster("precip_2001_2022.tif")
+
+
+temp.1864 <-raster("temp_1864_1900.tif")
+
+
+temp.1950 <-raster("temp_1901_2000.tif")
+
+
+temp.2011 <-raster("temp_2001_2011.tif")
+
+predictors.1864 <- stack(precip.1864, temp.1864)
+
+
+plot(predictors.1864)
+
+
+predictors.1950 <- stack(precip.1950, temp.1950)
+
+
+plot(predictors.1950)
+
+predictors.2011 <- stack(precip.2011, temp.2011)
+plot(predictors.2011)
+```
+
+---
+
+### Let's take *G. uliginosum* as an example for mapping
+
+```{r, eval=FALSE}
+#18th and 19th centuries
+occ_18_19 <- enlightenment[enlightenment$species=="Galium_uliginosum",c(10,9)]
+
+
+print(dim(occ_18_19))
+
+
+me_18_19 <- maxent(predictors.1864, occ_18_19)
+
+
+me_18_19
+
+
+#plot(me_18_19)
+
+
+ped_18_19 <- predict(me_18_19, predictors.1864)  
+
+#20th century
+
+
+occ_20 <- worldwars[worldwars$species=="Galium_uliginosum",c(10,9)]
+
+print(dim(occ_20))
+
+
+me_20 <- maxent(predictors.1950, occ_20)
+
+
+me_20
+
+
+#plot(me_20)
+
+
+ped_20 <- predict(me_20, predictors.1950)  # studyArea is the clipped rasters 
+
+
+#21st century
+
+
+occ_21 <- current[current$species=="Galium_uliginosum",c(10,9)]
+
+
+print(dim(occ_21))
+
+
+me_21 <- maxent(predictors.2011, occ_21)
+
+
+me_21
+
+
+#plot(me_21)
+
+
+ped_21 <- predict(me_21, predictors.2011)  # studyArea is the clipped rasters 
+
+
+
+#map the distribution
+par(mfrow=c(1,3))
+
+plot(ped_18_19,main="Distribution : 1768-1900")
+
+
+plot(ped_20,main="Distribution : 1901-2000")
+
+
+plot(ped_21,main="Distribution : 2001 - 2022")
+```
+
+
+
+
+![](judi.png)
+
+
+**References for MaxEnt modeling:**
+
+- Elith, J., H. Graham, C., P. Anderson, R., Dudík, M., Ferrier, S., Guisan, A., J. Hijmans, R., Huettmann, F., R. Leathwick, J., Lehmann, A., Li, J., G. Lohmann, L., A. Loiselle, B., Manion, G., Moritz, C., Nakamura, M., Nakazawa, Y., McC. M. Overton, J., Townsend Peterson, A., ... E. Zimmermann, N. (2006). Novel methods improve prediction of species' distributions from occurrence data. Ecography, 29: 129-151.
+
+
+- Elith, J., Phillips, S.-J., Hasite, T., Dudik, M., Chee, Y.-E., Yates, C.-J. (2010): A statistical explanation of MaxEnt for ecologists. Diversity and Distributions (17): 43-57.
+
+
+- Phillips, S.-J., Anderson, R.-P., Schapire, R.-E. (2006): Maximum entropy modeling of species geographic distributions. Ecological Modelling (190): 231-259.
+
+
+
+
+
